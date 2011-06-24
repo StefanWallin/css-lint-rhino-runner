@@ -19,10 +19,10 @@ Usage
 -----
 Current usage is not ideal. 
 
-# Install a JDK, download and install Rhino, download the csslint-rhino.js-file.
-# Then you edit the script and change the folder to work on.
-# Make modifications to paths for the rhino.jar in the script if necessary.
-# Run the linter!
+1. Install a JDK, download and install Rhino, download the csslint-rhino.js-file.
+1. Then you edit the script and change the folder to work on.
+1. Make modifications to paths for the rhino.jar in the script if necessary.
+1. Run the linter!
 
     ./lint.sh
 
