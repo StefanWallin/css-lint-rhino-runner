@@ -24,5 +24,5 @@ Current usage is not ideal.
 # Make modifications to paths for the rhino.jar in the script if necessary.
 # Run the linter!
 
-    ./rhino-lint.sh
+    ./lint.sh
 
