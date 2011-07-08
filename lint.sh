@@ -7,13 +7,29 @@
 # Init the temp file
 touch .tmp.txt
 
-# Loop through the argument folders: 
-for (( i=1 ; i < $#; i++ ))
-do 
-	# Find all files that end in .css but are not minified(which ends in .min.css).
-	find ${!i} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> .tmp.txt
+case "$#" in
+0) while read line; do
+	echo "STDIN";
+	line=(${line}); 
+	for (( i=0 ; i < ${#line[@]} ; i++ ))
+	do 
+		# Find all files that end in .css but are not minified(which ends in .min.css).
+		find ${line[$i]} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> .tmp.txt
+	done
 done
+   ;;
+-*|--*) echo help; exit 1
+   ;;
+*) args=($@);
+	echo "ARGS";
+	for (( i=1 ; i < $#; i++ ))
+	do 
 
+		# Find all files that end in .css but are not minified(which ends in .min.css).
+		find ${!i} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> .tmp.txt
+	done
+   ;;
+esac
 
 # Print which files is going to be linted
 echo "CSS linting these files:"
