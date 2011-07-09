@@ -6,19 +6,20 @@
 
 #Set up some initial vars:
 STRICTMODE=false
-
-
+LOGFILE=./logs/csswarnings.log	
+TMPFILE=.tmp.txt
 
 # Init the temp file
-touch .tmp.txt
+touch ${TMPFILE}
+
 
 #Loop through the arguments in STDIN
-while read line; do
+while read -t 1 line; do
 	line=(${line}); 
 	for (( i=0 ; i < ${#line[@]} ; i++ ))
 	do 
 		# Find all files that end in .css but are not minified(which ends in .min.css).
-		find ${line[$i]} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> .tmp.txt
+		find ${line[$i]} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> ${TMPFILE}
 	done
 done
 
@@ -26,36 +27,55 @@ done
 for (( i=1 ; i <= $#; i++ ))
 do 
 	case ${!i} in
-		"-s")
+		"--strict")
 			STRICTMODE=true
+			continue;
+			;;
+		"-l")
+			i=$(($i+1))
+			touch ${!i} >/dev/null 2>/dev/null
+			if [ $? == 0 ]; then	
+				LOGFILE=${!i}
+				echo "Log file: ${!i}"
+			else
+				echo "Supplied log file path (${!i})"
+			fi
 			continue;
 			;;
 	esac
 	# Find all files that end in .css but are not minified(which ends in .min.css).
-	find ${!i} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> .tmp.txt
+	find ${!i} |grep -v '/css$' |grep '.css$' |grep -v 'min.css$' >> ${TMPFILE}
 done
 
+argc=`cat .tmp.txt|wc -l`
+echo $argc
+if [  $(($argc+0)) == 0 ]; then
+	echo "Usage: "
+	echo "	lint.sh [-l logfile] [--strict] folder [folder...]"
+	echo "	pwd|lint.sh"
+	exit 1;
+fi
 
 # Print which files is going to be linted
 echo "CSS linting these files:"
-cat .tmp.txt
+cat ${TMPFILE}
 
 # Find all newlines that separates the filenames and replace them with spaces
-MYFILES=`cat .tmp.txt |tr '\n' ' '`
+MYFILES=`cat ${TMPFILE} |tr '\n' ' '`
 
 # Init the log file to avoid errors on nonexistant file
-touch ./logs/csswarnings.log
+rm ${LOGFILE}; touch ${LOGFILE}
 
 # Execute the linter and save the output in our log-file.
-java -jar rhino.jar csslint.js $MYFILES &> ./logs/csswarnings.log
+java -jar rhino.jar csslint.js $MYFILES &> ${LOGFILE}
 
 if [ $STRICTMODE == "true" ]; then
 	# Find out how many errors and warnings we had
-	E=`cat logs/csswarnings.log |grep " error at"|wc -l` || 0
-	W=`cat logs/csswarnings.log |grep " warning at"|wc -l` || 0
+	E=`cat ${LOGFILE} |grep " error at"|wc -l` || 0
+	W=`cat ${LOGFILE} |grep " warning at"|wc -l` || 0
 	
 	# Print the errors to the console
-	cat logs/csswarnings.log
+	cat ${LOGFILE}
 
 	# Print how many errors we found:
 	echo "CSS linting found $E errors and $W warnings."
@@ -65,10 +85,10 @@ if [ $STRICTMODE == "true" ]; then
 	
 else
 	# Find out how many errors we had
-	E=`cat logs/csswarnings.log |grep " error at"|wc -l`
+	E=`cat ${LOGFILE} |grep " error at"|wc -l`
 
 	# Print the errors to the console
-	cat logs/csswarnings.log |grep -B 1 -A 3 " error at"
+	cat ${LOGFILE} |grep -B 1 -A 3 " error at"
 
 	# Print how many errors we found:
 	echo "CSS linting found $E errors."
@@ -77,8 +97,8 @@ else
 	R=$E
 fi
 
-# Remove our .tmp.txt-file.
-rm .tmp.txt
+# Remove our ${TMPFILE}-file.
+rm ${TMPFILE}
 
 #exit with the number of errors.
 # exit status greater than zero should halt the following executions.
